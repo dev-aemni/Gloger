@@ -4,23 +4,28 @@ const cors = require('cors');
 const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
+// Dynamic port binding required by Render
 const PORT = process.env.PORT || 3000;
 const CLIENT_ID = process.env.client_id;
 
 const googleClient = new OAuth2Client(CLIENT_ID);
 
-// Enable CORS for cross-origin requests from GitHub Pages
 app.use(cors());
 app.use(express.json());
 
-// In-memory store for CLI user token limits (Replace with Database later if needed)
 const userLimits = new Map();
 
+// Root route
 app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'Gloger Backend Service Running' });
 });
 
-// Google Sign-In verification route
+// Render & UptimeRobot Health Check Endpoint
+app.get('/hc', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Google Auth route
 app.post('/api/auth/google', async (req, res) => {
   const { token } = req.body;
 
@@ -29,7 +34,6 @@ app.post('/api/auth/google', async (req, res) => {
   }
 
   try {
-    // Verify ID token directly with Google APIs
     const ticket = await googleClient.verifyIdToken({
       idToken: token,
       audience: CLIENT_ID,
@@ -39,7 +43,6 @@ app.post('/api/auth/google', async (req, res) => {
     const userId = payload.sub;
     const email = payload.email;
 
-    // Initialize initial token limit for new users (e.g., 100,000 CLI tokens)
     if (!userLimits.has(userId)) {
       userLimits.set(userId, { remainingTokens: 100000 });
     }

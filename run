@@ -1,0 +1,10 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: run <commit-message>"
+    exit 1
+fi
+
+git add .
+git commit -m "$1"
+git push origin main

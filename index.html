@@ -3,18 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gloger | Auth Portal</title>
+  <title>Gloger | CLI Auth & Token Portal</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-heading: #f0f6fc;
+      --accent: #58a6ff;
+      --success: #238636;
+      --error: #da3633;
     }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
       color: var(--text);
       display: flex;
@@ -22,79 +28,180 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
+      padding: 1rem;
     }
+
     .card {
       background: var(--card-bg);
-      padding: 2rem;
+      border: 1px solid var(--border);
       border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      padding: 2rem;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       text-align: center;
     }
-    h1 { margin-top: 0; font-size: 1.5rem; }
-    p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
-    #user-info {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
+
+    h1 {
+      color: var(--text-heading);
+      font-size: 1.4rem;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      color: #8b949e;
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+
+    #signin-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    #status {
+      font-size: 0.85rem;
+      margin: 1rem 0;
+      min-height: 1.2rem;
+      color: var(--accent);
+    }
+
+    .status-error { color: var(--error) !important; }
+    .status-success { color: var(--success) !important; }
+
+    /* Dashboard UI */
+    #dashboard {
       display: none;
       text-align: left;
+      border-top: 1px solid var(--border);
+      padding-top: 1.25rem;
+      margin-top: 1rem;
     }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
     .avatar {
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      margin-bottom: 0.5rem;
+      border: 1px solid var(--border);
     }
-    #status {
-      margin-top: 1rem;
-      font-size: 0.85rem;
+
+    .user-details h2 {
+      font-size: 1rem;
+      color: var(--text-heading);
+      margin: 0;
+    }
+
+    .user-details p {
+      font-size: 0.8rem;
+      color: #8b949e;
+      margin: 2px 0 0 0;
+    }
+
+    .stat-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: bold;
       color: var(--accent);
-      word-break: break-all;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 0.2rem;
+    }
+
+    .btn-logout {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: var(--border);
     }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h1>Gloger Authentication</h1>
-    <p>Sign in to authorize your CLI Code Agent & check token limits.</p>
+    <h1>Gloger CLI Auth</h1>
+    <p class="subtitle">Authenticate code agents & verify live token limits</p>
 
-    <!-- Google Sign-In Button Container -->
-    <div id="g_id_onload"
-         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse"
-         data-auto_prompt="false">
+    <!-- Google Login Container -->
+    <div id="signin-container">
+      <div id="g_id_onload"
+           data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_dark"></div>
     </div>
-    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="dark"></div>
 
     <div id="status"></div>
 
-    <div id="user-info">
-      <img id="user-avatar" class="avatar" src="" alt="Profile">
-      <div id="user-name" style="font-weight: bold;"></div>
-      <div id="user-email" style="font-size: 0.85rem; color: var(--muted);"></div>
+    <!-- Authenticated Dashboard -->
+    <div id="dashboard">
+      <div class="user-profile">
+        <img id="user-avatar" class="avatar" src="" alt="Profile">
+        <div class="user-details">
+          <h2 id="user-name">--</h2>
+          <p id="user-email">--</p>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div id="token-count" class="stat-value">--</div>
+        <div class="stat-label">CLI Tokens Remaining</div>
+      </div>
+
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
     </div>
   </div>
 
   <script>
-    const RENDER_BACKEND_URL = "https://YOUR-APP-NAME.onrender.com"; // Replace with your Render service URL
+    // Replace with your active Render URL (e.g., https://gloger-backend.onrender.com)
+    const RENDER_BACKEND_URL = "https://YOUR-APP-NAME.onrender.com";
 
     async function handleCredentialResponse(response) {
       const idToken = response.credential;
-      document.getElementById("status").innerText = "Verifying with Render backend...";
+      const statusEl = document.getElementById("status");
+      
+      statusEl.className = "";
+      statusEl.innerText = "Verifying with Node backend...";
 
-      // Decode JWT locally for display purposes
-      const payload = JSON.parse(atob(idToken.split('.')[1]));
-      document.getElementById("user-avatar").src = payload.picture;
-      document.getElementById("user-name").innerText = payload.name;
-      document.getElementById("user-email").innerText = payload.email;
-      document.getElementById("user-info").style.display = "block";
+      // Quick visual extract from local JWT payload for immediate avatar feedback
+      try {
+        const payload = JSON.parse(atob(idToken.split('.')[1]));
+        document.getElementById("user-avatar").src = payload.picture || "";
+      } catch (e) {}
 
       try {
-        // Send ID token to Render backend to authenticate / check limits
+        // Send token to Node.js backend POST /api/auth/google
         const res = await fetch(`${RENDER_BACKEND_URL}/api/auth/google`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -102,15 +209,38 @@
         });
 
         const data = await res.json();
+
         if (res.ok) {
-          document.getElementById("status").innerText = `Authenticated! Remaining Tokens: ${data.tokensRemaining ?? 'Unlimited'}`;
+          statusEl.className = "status-success";
+          statusEl.innerText = data.message || "Authenticated successfully!";
+
+          // Populate Dashboard with backend response
+          document.getElementById("user-name").innerText = data.user.name;
+          document.getElementById("user-email").innerText = data.user.email;
+          document.getElementById("token-count").innerText = Number(data.tokensRemaining).toLocaleString();
+
+          // Toggle UI state
+          document.getElementById("signin-container").style.display = "none";
+          document.getElementById("dashboard").style.display = "block";
         } else {
-          document.getElementById("status").innerText = `Backend Error: ${data.message}`;
+          statusEl.className = "status-error";
+          statusEl.innerText = data.message || "Authentication failed.";
         }
       } catch (err) {
-        document.getElementById("status").innerText = "Sign-in successful locally. (Render backend offline or unreachable)";
+        statusEl.className = "status-error";
+        statusEl.innerText = "Failed to reach Render backend server.";
+        console.error("Auth error:", err);
       }
+    }
+
+    function logout() {
+      document.getElementById("signin-container").style.display = "flex";
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("status").className = "";
+      document.getElementById("status").innerText = "Signed out.";
+      google.accounts.id.disableAutoSelect();
     }
   </script>
 </body>
 </html>
+
