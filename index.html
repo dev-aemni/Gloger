@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gloger | CLI Auth & Token Portal</title>
+  <title>Gloger | Auth Portal</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
@@ -16,11 +16,9 @@
       --success: #238636;
       --error: #da3633;
     }
-
     * { box-sizing: border-box; }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg);
       color: var(--text);
       display: flex;
@@ -30,7 +28,6 @@
       margin: 0;
       padding: 1rem;
     }
-
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -41,109 +38,23 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       text-align: center;
     }
-
-    h1 {
-      color: var(--text-heading);
-      font-size: 1.4rem;
-      margin-top: 0;
-      margin-bottom: 0.5rem;
-    }
-
-    p.subtitle {
-      color: #8b949e;
-      font-size: 0.875rem;
-      margin-bottom: 1.5rem;
-    }
-
-    #signin-container {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-
-    #status {
-      font-size: 0.85rem;
-      margin: 1rem 0;
-      min-height: 1.2rem;
-      color: var(--accent);
-    }
-
+    h1 { color: var(--text-heading); font-size: 1.4rem; margin-top: 0; margin-bottom: 0.5rem; }
+    p.subtitle { color: #8b949e; font-size: 0.875rem; margin-bottom: 1.5rem; }
+    #signin-container { display: flex; justify-content: center; margin-bottom: 1rem; min-height: 40px; }
+    #status { font-size: 0.85rem; margin: 1rem 0; min-height: 1.2rem; color: var(--accent); }
     .status-error { color: var(--error) !important; }
     .status-success { color: var(--success) !important; }
-
-    /* Dashboard UI */
-    #dashboard {
-      display: none;
-      text-align: left;
-      border-top: 1px solid var(--border);
-      padding-top: 1.25rem;
-      margin-top: 1rem;
-    }
-
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-    }
-
-    .user-details h2 {
-      font-size: 1rem;
-      color: var(--text-heading);
-      margin: 0;
-    }
-
-    .user-details p {
-      font-size: 0.8rem;
-      color: #8b949e;
-      margin: 2px 0 0 0;
-    }
-
-    .stat-box {
-      background: #0d1117;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-
-    .stat-value {
-      font-size: 1.6rem;
-      font-weight: bold;
-      color: var(--accent);
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      color: #8b949e;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 0.2rem;
-    }
-
-    .btn-logout {
-      width: 100%;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.6rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: background 0.2s;
-    }
-
-    .btn-logout:hover {
-      background: var(--border);
-    }
+    
+    #dashboard { display: none; text-align: left; border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1rem; }
+    .user-profile { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+    .avatar { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); }
+    .user-details h2 { font-size: 1rem; color: var(--text-heading); margin: 0; }
+    .user-details p { font-size: 0.8rem; color: #8b949e; margin: 2px 0 0 0; }
+    .stat-box { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; margin-bottom: 1rem; }
+    .stat-value { font-size: 1.6rem; font-weight: bold; color: var(--accent); }
+    .stat-label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.2rem; }
+    .btn-logout { width: 100%; background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    .btn-logout:hover { background: var(--border); }
   </style>
 </head>
 <body>
@@ -152,17 +63,10 @@
     <h1>Gloger CLI Auth</h1>
     <p class="subtitle">Authenticate code agents & verify live token limits</p>
 
-    <!-- Google Login Container -->
-    <div id="signin-container">
-      <div id="g_id_onload"
-           data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
-      <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_dark"></div>
-    </div>
+    <!-- Dynamic Google Sign-In Button Target -->
+    <div id="signin-container"></div>
 
-    <div id="status"></div>
+    <div id="status">Loading configuration...</div>
 
     <!-- Authenticated Dashboard -->
     <div id="dashboard">
@@ -184,9 +88,40 @@
   </div>
 
   <script>
-    // Replace with your active Render URL (e.g., https://gloger-backend.onrender.com)
-    const RENDER_BACKEND_URL = "https://YOUR-APP-NAME.onrender.com";
+    const RENDER_BACKEND_URL = "https://gloger.onrender.com";
 
+    // 1. Fetch Client ID & Initialize Google Sign-In dynamically
+    async function initGoogleAuth() {
+      const statusEl = document.getElementById("status");
+      try {
+        const configRes = await fetch(`${RENDER_BACKEND_URL}/api/config`);
+        const config = await configRes.json();
+
+        if (!config.clientId) {
+          throw new Error("Client ID missing from backend configuration.");
+        }
+
+        // Initialize Google Identity Services API
+        google.accounts.id.initialize({
+          client_id: config.clientId,
+          callback: handleCredentialResponse
+        });
+
+        // Render button into container
+        google.accounts.id.renderButton(
+          document.getElementById("signin-container"),
+          { theme: "filled_dark", size: "large", type: "standard" }
+        );
+
+        statusEl.innerText = "";
+      } catch (err) {
+        statusEl.className = "status-error";
+        statusEl.innerText = "Failed to load auth config from server.";
+        console.error("Auth init error:", err);
+      }
+    }
+
+    // 2. Handle Google Sign-In response
     async function handleCredentialResponse(response) {
       const idToken = response.credential;
       const statusEl = document.getElementById("status");
@@ -194,14 +129,12 @@
       statusEl.className = "";
       statusEl.innerText = "Verifying with Node backend...";
 
-      // Quick visual extract from local JWT payload for immediate avatar feedback
       try {
         const payload = JSON.parse(atob(idToken.split('.')[1]));
         document.getElementById("user-avatar").src = payload.picture || "";
       } catch (e) {}
 
       try {
-        // Send token to Node.js backend POST /api/auth/google
         const res = await fetch(`${RENDER_BACKEND_URL}/api/auth/google`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -214,12 +147,10 @@
           statusEl.className = "status-success";
           statusEl.innerText = data.message || "Authenticated successfully!";
 
-          // Populate Dashboard with backend response
           document.getElementById("user-name").innerText = data.user.name;
           document.getElementById("user-email").innerText = data.user.email;
           document.getElementById("token-count").innerText = Number(data.tokensRemaining).toLocaleString();
 
-          // Toggle UI state
           document.getElementById("signin-container").style.display = "none";
           document.getElementById("dashboard").style.display = "block";
         } else {
@@ -228,8 +159,7 @@
         }
       } catch (err) {
         statusEl.className = "status-error";
-        statusEl.innerText = "Failed to reach Render backend server.";
-        console.error("Auth error:", err);
+        statusEl.innerText = "Failed to reach backend server.";
       }
     }
 
@@ -240,7 +170,9 @@
       document.getElementById("status").innerText = "Signed out.";
       google.accounts.id.disableAutoSelect();
     }
+
+    // Start initialization when DOM finishes loading
+    window.addEventListener("DOMContentLoaded", initGoogleAuth);
   </script>
 </body>
 </html>
-

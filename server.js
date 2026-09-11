@@ -20,6 +20,12 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'Gloger Backend Service Running' });
 });
 
+// Expose public OAuth Client ID to frontend
+app.get('/api/config', (req, res) => {
+  res.json({ clientId: process.env.client_id });
+});
+
+
 // Render & UptimeRobot Health Check Endpoint
 app.get('/hc', (req, res) => {
   res.status(200).send('OK');
