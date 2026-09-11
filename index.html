@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gloger | Auth Portal</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h1 { margin-top: 0; font-size: 1.5rem; }
+    p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    #user-info {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      display: none;
+      text-align: left;
+    }
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+    }
+    #status {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--accent);
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Gloger Authentication</h1>
+    <p>Sign in to authorize your CLI Code Agent & check token limits.</p>
+
+    <!-- Google Sign-In Button Container -->
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="dark"></div>
+
+    <div id="status"></div>
+
+    <div id="user-info">
+      <img id="user-avatar" class="avatar" src="" alt="Profile">
+      <div id="user-name" style="font-weight: bold;"></div>
+      <div id="user-email" style="font-size: 0.85rem; color: var(--muted);"></div>
+    </div>
+  </div>
+
+  <script>
+    const RENDER_BACKEND_URL = "https://YOUR-APP-NAME.onrender.com"; // Replace with your Render service URL
+
+    async function handleCredentialResponse(response) {
+      const idToken = response.credential;
+      document.getElementById("status").innerText = "Verifying with Render backend...";
+
+      // Decode JWT locally for display purposes
+      const payload = JSON.parse(atob(idToken.split('.')[1]));
+      document.getElementById("user-avatar").src = payload.picture;
+      document.getElementById("user-name").innerText = payload.name;
+      document.getElementById("user-email").innerText = payload.email;
+      document.getElementById("user-info").style.display = "block";
+
+      try {
+        // Send ID token to Render backend to authenticate / check limits
+        const res = await fetch(`${RENDER_BACKEND_URL}/api/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: idToken })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById("status").innerText = `Authenticated! Remaining Tokens: ${data.tokensRemaining ?? 'Unlimited'}`;
+        } else {
+          document.getElementById("status").innerText = `Backend Error: ${data.message}`;
+        }
+      } catch (err) {
+        document.getElementById("status").innerText = "Sign-in successful locally. (Render backend offline or unreachable)";
+      }
+    }
+  </script>
+</body>
+</html>
