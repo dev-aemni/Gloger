@@ -3,176 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gloger | Auth Portal</title>
+  <title>Gloger Auth Portal</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    :root {
-      --bg: #0d1117;
-      --card-bg: #161b22;
-      --border: #30363d;
-      --text: #c9d1d9;
-      --text-heading: #f0f6fc;
-      --accent: #58a6ff;
-      --success: #238636;
-      --error: #da3633;
-    }
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 1rem;
-    }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 2rem;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-      text-align: center;
-    }
-    h1 { color: var(--text-heading); font-size: 1.4rem; margin-top: 0; margin-bottom: 0.5rem; }
-    p.subtitle { color: #8b949e; font-size: 0.875rem; margin-bottom: 1.5rem; }
-    #signin-container { display: flex; justify-content: center; margin-bottom: 1rem; min-height: 40px; }
-    #status { font-size: 0.85rem; margin: 1rem 0; min-height: 1.2rem; color: var(--accent); }
+    :root { --bg: #0d1117; --card-bg: #161b22; --border: #30363d; --text: #c9d1d9; --accent: #58a6ff; --success: #238636; --error: #da3633; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; width: 90%; max-width: 400px; text-align: center; }
+    #status { font-size: 0.9rem; margin-top: 1rem; color: var(--accent); }
     .status-error { color: var(--error) !important; }
     .status-success { color: var(--success) !important; }
-    
-    #dashboard { display: none; text-align: left; border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1rem; }
-    .user-profile { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
-    .avatar { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); }
-    .user-details h2 { font-size: 1rem; color: var(--text-heading); margin: 0; }
-    .user-details p { font-size: 0.8rem; color: #8b949e; margin: 2px 0 0 0; }
-    .stat-box { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; margin-bottom: 1rem; }
-    .stat-value { font-size: 1.6rem; font-weight: bold; color: var(--accent); }
-    .stat-label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.2rem; }
-    .btn-logout { width: 100%; background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
-    .btn-logout:hover { background: var(--border); }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h1>Gloger CLI Auth</h1>
-    <p class="subtitle">Authenticate code agents & verify live token limits</p>
-
-    <!-- Dynamic Google Sign-In Button Target -->
-    <div id="signin-container"></div>
-
-    <div id="status">Loading configuration...</div>
-
-    <!-- Authenticated Dashboard -->
-    <div id="dashboard">
-      <div class="user-profile">
-        <img id="user-avatar" class="avatar" src="" alt="Profile">
-        <div class="user-details">
-          <h2 id="user-name">--</h2>
-          <p id="user-email">--</p>
-        </div>
-      </div>
-
-      <div class="stat-box">
-        <div id="token-count" class="stat-value">--</div>
-        <div class="stat-label">CLI Tokens Remaining</div>
-      </div>
-
-      <button class="btn-logout" onclick="logout()">Sign Out</button>
-    </div>
+    <h2 style="margin-top:0;">Gloger Login</h2>
+    <p style="font-size: 0.85rem; color: #8b949e;">Authenticate your CLI agent session</p>
+    
+    <div id="signin-container" style="display:flex; justify-content:center;"></div>
+    <div id="status">Loading config...</div>
   </div>
 
   <script>
-    const RENDER_BACKEND_URL = "https://gloger.onrender.com";
+    const RENDER_URL = "https://gloger.onrender.com";
+    const urlParams = new URLSearchParams(window.location.search);
+    const callbackUrl = urlParams.get('callback');
 
-    // 1. Fetch Client ID & Initialize Google Sign-In dynamically
-    async function initGoogleAuth() {
-      const statusEl = document.getElementById("status");
+    async function init() {
       try {
-        const configRes = await fetch(`${RENDER_BACKEND_URL}/api/config`);
-        const config = await configRes.json();
+        const res = await fetch(`${RENDER_URL}/api/config`);
+        const { clientId } = await res.json();
 
-        if (!config.clientId) {
-          throw new Error("Client ID missing from backend configuration.");
-        }
-
-        // Initialize Google Identity Services API
         google.accounts.id.initialize({
-          client_id: config.clientId,
-          callback: handleCredentialResponse
+          client_id: clientId,
+          callback: handleLogin
         });
 
-        // Render button into container
         google.accounts.id.renderButton(
           document.getElementById("signin-container"),
-          { theme: "filled_dark", size: "large", type: "standard" }
+          { theme: "filled_dark", size: "large" }
         );
 
-        statusEl.innerText = "";
+        document.getElementById("status").innerText = "";
       } catch (err) {
-        statusEl.className = "status-error";
-        statusEl.innerText = "Failed to load auth config from server.";
-        console.error("Auth init error:", err);
+        document.getElementById("status").innerText = "Failed to load auth server.";
       }
     }
 
-    // 2. Handle Google Sign-In response
-    async function handleCredentialResponse(response) {
-      const idToken = response.credential;
+    async function handleLogin(response) {
       const statusEl = document.getElementById("status");
-      
-      statusEl.className = "";
-      statusEl.innerText = "Verifying with Node backend...";
+      statusEl.innerText = "Authenticating with database...";
 
       try {
-        const payload = JSON.parse(atob(idToken.split('.')[1]));
-        document.getElementById("user-avatar").src = payload.picture || "";
-      } catch (e) {}
-
-      try {
-        const res = await fetch(`${RENDER_BACKEND_URL}/api/auth/google`, {
+        const res = await fetch(`${RENDER_URL}/api/auth/google`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: idToken })
+          body: JSON.stringify({ token: response.credential })
         });
 
         const data = await res.json();
 
         if (res.ok) {
           statusEl.className = "status-success";
-          statusEl.innerText = data.message || "Authenticated successfully!";
 
-          document.getElementById("user-name").innerText = data.user.name;
-          document.getElementById("user-email").innerText = data.user.email;
-          document.getElementById("token-count").innerText = Number(data.tokensRemaining).toLocaleString();
-
-          document.getElementById("signin-container").style.display = "none";
-          document.getElementById("dashboard").style.display = "block";
+          // If CLI login loopback is active, notify local CLI listener
+          if (callbackUrl) {
+            statusEl.innerText = "Sending credentials to CLI...";
+            await fetch(`${callbackUrl}?apiKey=${data.user.apiKey}&email=${data.user.email}`);
+            document.querySelector(".card").innerHTML = `
+              <h2 style="color:var(--success)">Authentication Successful!</h2>
+              <p>Your CLI agent is now logged in. You can close this tab safely.</p>
+            `;
+          } else {
+            statusEl.innerText = `Logged in as ${data.user.email}. Tokens: ${data.tokensRemaining.toLocaleString()}`;
+          }
         } else {
           statusEl.className = "status-error";
-          statusEl.innerText = data.message || "Authentication failed.";
+          statusEl.innerText = data.message;
         }
       } catch (err) {
         statusEl.className = "status-error";
-        statusEl.innerText = "Failed to reach backend server.";
+        statusEl.innerText = "Backend error.";
       }
     }
 
-    function logout() {
-      document.getElementById("signin-container").style.display = "flex";
-      document.getElementById("dashboard").style.display = "none";
-      document.getElementById("status").className = "";
-      document.getElementById("status").innerText = "Signed out.";
-      google.accounts.id.disableAutoSelect();
-    }
-
-    // Start initialization when DOM finishes loading
-    window.addEventListener("DOMContentLoaded", initGoogleAuth);
+    window.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
 </html>
